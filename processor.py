@@ -93,12 +93,15 @@ class Processor:
         lowest_primary_vlan = self.net.lowest_vlans[lowest_device]
 
         if redundant:
+            # looking for a secondary vlan on the same device
             lowest_secondary_vlan_id = device.get_corresponding_secondary_vlan(lowest_primary_vlan)
-            # we need 2-nd output vlan
+            # we did not find the corresponding secondary vlan
             while lowest_secondary_vlan_id == -1:
                 # so look out for the secondary vlan id
                 device.increase_the_counter()
+                # update the value of the next lowest primary vlan for the device
                 self.net.update_lowest_vlan_id(lowest_device)
+                # get the next device to look out for the vlan pair
                 lowest_device = self.net.get_lowest_device_id()
                 device = self.net.devices[lowest_device]
                 lowest_primary_vlan = self.net.lowest_vlans[lowest_device]
@@ -110,6 +113,8 @@ class Processor:
         else:
             self.net.devices[lowest_device].remove_used_vlan()
 
+        # now we could have gone farahead in the search for a secondary vlan
+        # so getting back
         self.net.reset_counter(lowest_device)
         self.net.fillout_lowest_vlan_ids()
 
