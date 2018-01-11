@@ -85,6 +85,7 @@ class Processor:
         :param redundant: if request is redundant, True or False
         """
         result_out = []
+        num_device_out = 0
 
         # so we need the primary vlan id in any case
         # might be changed if request is redundant
@@ -96,7 +97,8 @@ class Processor:
             # looking for a secondary vlan on the same device
             lowest_secondary_vlan_id = device.get_corresponding_secondary_vlan(lowest_primary_vlan)
             # we did not find the corresponding secondary vlan
-            while lowest_secondary_vlan_id == -1:
+            # and we still have devices to look on
+            while lowest_secondary_vlan_id == -1 and num_device_out < (len(self.net.devices) - 1):
                 # so look out for the secondary vlan id
                 device.increase_the_counter()
                 # update the value of the next lowest primary vlan for the device
@@ -105,7 +107,19 @@ class Processor:
                 lowest_device = self.net.get_lowest_device_id()
                 device = self.net.devices[lowest_device]
                 lowest_primary_vlan = self.net.lowest_vlans[lowest_device]
+
+                # if our vlans are gone out
+                if lowest_primary_vlan == sys.maxint:
+                    #weskip this device
+                    num_device_out = num_device_out + 1
+                    continue
+
                 lowest_secondary_vlan_id = device.get_corresponding_secondary_vlan(lowest_primary_vlan)
+
+            # if it was the last device to skip and we still did not find
+            # the secondary vlan
+            if lowest_secondary_vlan_id == -1 and num_device_out == (len(self.net.devices) - 1):
+                raise Exception("We did not find the vlans for the request #%d" % request_id)
 
             tmp = {"request_id": request_id, "device_id": lowest_device, "primary_port": 0, "vlan_id": lowest_primary_vlan}
             result_out.append(tmp)

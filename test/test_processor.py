@@ -48,3 +48,9 @@ class TestProcessor(TestCase):
         # compare
         for i in xrange(len(output)):
             self.assertDictEqual(output[i], self.output[i])
+
+    def test_exception_raise(self):
+        self.processor.process_requests_file()
+        with self.assertRaises(Exception) as context:
+            self.processor.process_requests_file()
+        self.assertRaises("We did not find the vlans for the request #3" in context.exception)
